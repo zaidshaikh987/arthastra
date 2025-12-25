@@ -19,8 +19,18 @@ import {
 } from "lucide-react"
 
 // Types matching the API response
-type Investigation = { rootCause: string; severity: string; hiddenFactor: string }
-type Strategy = { strategyName: string; actionItem: string; negotiationScript: string }
+type Investigation = {
+  rootCause: string;
+  severity: string;
+  hiddenFactor: string;
+  bulletPoints?: string[];
+}
+type Strategy = {
+  strategyName: string;
+  actionItem: string;
+  negotiationScript: string;
+  bulletPoints?: string[];
+}
 type Plan = { step1: string; step2: string; step3: string; estimatedDays: number }
 
 type AgentState = "idle" | "working" | "completed"
