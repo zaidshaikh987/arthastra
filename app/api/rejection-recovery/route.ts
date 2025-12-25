@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import {
     calculateDTI,
     analyzeEmploymentRisk,
@@ -8,28 +8,33 @@ import {
     calculateSavingsTimeline,
 } from "@/lib/tools/agent-tools";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+const ai = new GoogleGenAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
 
 // ===============================================
 // AGENT 1: THE INVESTIGATOR (Sherlock)
 // ===============================================
 async function investigatorAgent(userData: any) {
-    // TOOL CALLS (Deterministic)
+    console.log("🕵️ Investigator: Analyzing application...");
+
     const dti = calculateDTI(
         userData.monthlyIncome || 0,
         userData.existingEMI || 0,
         userData.monthlyExpenses || 0
     );
+    console.log("   ✓ DTI:", dti + "%");
 
     const employmentRisk = analyzeEmploymentRisk(
         userData.employmentType || "salaried",
         userData.employmentTenure || "1-2yr"
     );
+    console.log("   ✓ Risk:", employmentRisk.riskLevel);
 
     const anomalies = detectFinancialAnomalies(userData);
+    console.log("   ✓ Anomalies:", anomalies.hasAnomaly ? "Detected" : "None");
 
     // AI REASONING (Using Tool Results)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `You are a Financial Investigator. Analyze this loan rejection using the TOOL RESULTS below.
 
 TOOL RESULTS:
@@ -56,8 +61,12 @@ Format as JSON:
   "bulletPoints": ["point 1", "point 2", "point 3"]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+    const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    const text = (result.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(text);
 }
 
@@ -65,14 +74,15 @@ Format as JSON:
 // AGENT 2: THE NEGOTIATOR (The Wolf)
 // ===============================================
 async function negotiatorAgent(investigationReport: any, userData: any) {
-    // TOOL CALL: Simulate credit score improvements
+    console.log("🐺 Negotiator: Crafting strategy...");
+
     const potentialActions = ["dispute_error", "reduce_utilization"];
     const creditSimulation = simulateCreditScoreImpact(
         userData.creditScore || 650,
         potentialActions
     );
+    console.log("   ✓ Score boost: +" + (creditSimulation.projectedScore - (userData.creditScore || 650)));
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `You are a Financial Negotiation Expert. The Investigator found: ${investigationReport.rootCause}.
 
 TOOL RESULTS:
@@ -90,8 +100,11 @@ Format as JSON:
   "negotiationScript": "Opening line for bank (max 50 words)"
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+    const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+    const text = (result.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(text);
 }
 
@@ -99,14 +112,15 @@ Format as JSON:
 // AGENT 3: THE ARCHITECT (The Builder)
 // ===============================================
 async function architectAgent(negotiationStrategy: any, userData: any) {
-    // TOOL CALL: Calculate savings timeline
+    console.log("🏗️  Architect: Building plan...");
+
     const savingsTimeline = calculateSavingsTimeline(
         10000, // Current savings estimate
         50000, // Target emergency fund
         5000 // Monthly savings rate
     );
+    console.log("   ✓ Timeline:", savingsTimeline.months + " months");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `You are a Wealth Planning Architect. The Negotiator proposed: ${negotiationStrategy.strategyName}.
 
 TOOL RESULTS:
@@ -122,8 +136,11 @@ Format as JSON:
   "estimatedDays": ${savingsTimeline.months * 30}
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+    const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+    const text = (result.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(text);
 }
 
@@ -136,19 +153,13 @@ export async function POST(req: Request) {
     try {
         body = await req.json();
 
-        console.log("🔧 Starting Agentic Pipeline with Tool Calls...");
+        console.log("\n🔧 Agentic Pipeline: 3 agents, 5 tools\n");
 
-        // 1. INVESTIGATOR: Calls DTI, Employment Risk, Anomaly Detection
         const investigation = await investigatorAgent(body);
-        console.log("✅ Investigator completed. Tools called: DTI, Employment Risk, Anomaly Detection");
-
-        // 2. NEGOTIATOR: Calls Credit Score Simulator
         const strategy = await negotiatorAgent(investigation, body);
-        console.log("✅ Negotiator completed. Tools called: Credit Score Simulator");
-
-        // 3. ARCHITECT: Calls Savings Timeline Calculator
         const plan = await architectAgent(strategy, body);
-        console.log("✅ Architect completed. Tools called: Savings Timeline");
+
+        console.log("\n✅ Pipeline complete\n");
 
         return NextResponse.json({
             stage1_investigation: investigation,

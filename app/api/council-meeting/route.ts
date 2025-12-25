@@ -1,49 +1,65 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-// Initialize Gemini directly (Bypassing Genkit path issues on Windows)
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
-// Use gemini-1.5-flash as requested by user
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Initialize using working SDK (same as chatbot)
+const ai = new GoogleGenAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
 
 export async function POST(req: Request) {
-    let body: any = {}; // Define body in function scope
+    let body: any = {};
 
     try {
         body = await req.json();
 
-        // 1. Define Persona Prompts
-        const optimistPrompt = "You are 'The Optimist', a sales-driven loan officer. Your goal is to APPROVE this loan. Find every possible reason to say YES. Focus on: Potential income growth, stability, asset creation. Ignore the risks or downplay them. User Data: " + JSON.stringify(body) + ". Write a short, punchy argument (2-3 sentences) supporting this user. Output purely the argument text.";
+        // Optimist Agent
+        const optimistPrompt = `You are 'The Optimist', a sales-driven loan officer. Find every reason to APPROVE this loan.
+User Data: ${JSON.stringify(body)}
+Write a punchy 2-3 sentence argument. Output purely the argument text.`;
 
-        const pessimistPrompt = "You are 'The Pessimist', a strict risk underwriter. Your goal is to REJECT this loan to protect the bank. Focus on: High DTI, credit score gaps, economic downturns. Be skeptical and harsh. User Data: " + JSON.stringify(body) + ". Write a short, punchy argument (2-3 sentences) rejecting this user. Output purely the argument text.";
+        // Pessimist Agent  
+        const pessimistPrompt = `You are 'The Pessimist', a strict risk underwriter. Find every reason to REJECT this loan.
+User Data: ${JSON.stringify(body)}
+Write a harsh 2-3 sentence argument. Output purely the argument text.`;
 
-        // 2. Parallel Execution (Real-time Multi-Agent)
+        // Parallel Execution
         const [optRes, pessRes] = await Promise.all([
-            model.generateContent(optimistPrompt),
-            model.generateContent(pessimistPrompt)
+            ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: [{ role: "user", parts: [{ text: optimistPrompt }] }],
+            }),
+            ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: [{ role: "user", parts: [{ text: pessimistPrompt }] }],
+            })
         ]);
 
-        const optimistArg = optRes.response.text();
-        const pessimistArg = pessRes.response.text();
+        const optimistArg = optRes.text || "Optimist pending...";
+        const pessimistArg = pessRes.text || "Pessimist pending...";
 
-        // 3. The Judge (Sequential Execution)
-        const judgePrompt = "You are 'The Judge', an impartial compliance officer. The Optimist said: " + JSON.stringify(optimistArg) + ". The Pessimist said: " + JSON.stringify(pessimistArg) + ". User Financials: Income: " + body.monthlyIncome + ", Loan: " + body.loanAmount + ", Score: " + (body.creditScore || 'N/A') + ". Make a final binding decision. Return ONLY a JSON object in this format (no markdown): { \"verdict\": \"string explaining decision\", \"approved\": boolean }";
+        // Judge Agent (Sequential)
+        const judgePrompt = `You are 'The Judge'. Listen to both sides and decide.
+OPTIMIST: ${optimistArg}
+PESSIMIST: ${pessimistArg}
+User: Income: ₹${body.monthlyIncome}, Loan: ₹${body.loanAmount}, Credit: ${body.creditScore || 'N/A'}
 
-        const judgeRes = await model.generateContent(judgePrompt);
+Return ONLY JSON: {"verdict": "decision explanation", "approved": true/false}`;
 
-        // Fix: Use simple string replacement without regex literals to avoid build tool parsing issues
-        let judgeText = judgeRes.response.text();
-        judgeText = judgeText.replace("```json", "").replace("```", "").trim();
+        const judgeRes = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: judgePrompt }] }],
+        });
 
-        // Safety Clean up
-        if (judgeText.startsWith("```")) {
-            judgeText = judgeText.slice(3);
+        let judgeText = (judgeRes.text || "{}").replace(/```json/g, "").replace(/```/g, "").trim();
+
+        // Parse judgment
+        let judgment: any = {};
+        try {
+            const jsonMatch = judgeText.match(/\{[\s\S]*\}/);
+            judgment = jsonMatch ? JSON.parse(jsonMatch[0]) : { verdict: judgeText, approved: false };
+        } catch {
+            judgment = { verdict: judgeText, approved: false };
         }
-        if (judgeText.endsWith("```")) {
-            judgeText = judgeText.slice(0, -3);
-        }
-
-        const judgment = JSON.parse(judgeText);
 
         return NextResponse.json({
             optimistArgument: optimistArg,
@@ -53,28 +69,21 @@ export async function POST(req: Request) {
         });
 
     } catch (error: any) {
-        console.error("Council Flow Error (Falling back to Simulation):", error);
+        console.error("Council Error:", error);
 
-        // Fallback Simulation to ensure non-empty UI
-        // Uses body if available, otherwise defaults to safe values
-        const monthlyIncome = body?.monthlyIncome || 0;
-        const creditScore = body?.creditScore || 0;
-
-        const isGoodProfile = (monthlyIncome > 40000) && (creditScore > 700);
+        // Fallback
+        const isGoodProfile = (body?.monthlyIncome || 0) > 40000 && (body?.creditScore || 0) > 700;
 
         return NextResponse.json({
             optimistArgument: isGoodProfile
-                ? "This applicant is a prime candidate! Strong income stability and excellent credit history suggest zero default risk."
-                : "Despite current challenges, the applicant shows massive potential for income growth in the coming sector.",
-
+                ? "Prime candidate! Strong income and excellent credit."
+                : "Despite challenges, shows massive potential.",
             pessimistArgument: isGoodProfile
-                ? "Even with good income, the market volatility is a risk. We should check for hidden liabilities."
-                : "High risk alert! The debt-to-income ratio is borderline and credit history is too thin to trust.",
-
+                ? "Market volatility is a risk. Check hidden liabilities."
+                : "High risk! Borderline DTI and thin credit history.",
             judgeVerdict: isGoodProfile
-                ? "After weighing the evidence, the applicant's financial health is robust. The risk is minimal. Approved."
-                : "The risks outlined by the Pessimist outweigh the potential. We cannot approve this at this time.",
-
+                ? "Financial health is robust. Risk minimal. Approved."
+                : "Risks outweigh potential. Cannot approve.",
             approved: isGoodProfile
         });
     }
