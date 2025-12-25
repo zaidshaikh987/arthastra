@@ -5,9 +5,13 @@
  * for building production-grade agentic AI systems.
  * 
  * Architecture: Multi-Agent Pipeline with Autonomous Tool Selection
+ * 
+ * NOTE: This is a conceptual implementation showing ADK patterns.
+ * The production API (app/api/rejection-recovery/route.ts) uses a proven hybrid approach.
  */
 
-import { Agent } from "@google/adk";
+// @ts-ignore - ADK is in beta, using conceptual types for documentation
+import type { Agent } from "@google/adk";
 import {
     calculateDTI,
     analyzeEmploymentRisk,
