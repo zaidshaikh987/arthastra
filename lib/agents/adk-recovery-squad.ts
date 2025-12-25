@@ -104,7 +104,7 @@ const savingsTimelineTool = {
  * Role: Analyze loan application and identify risks
  * Tools: DTI Calculator, Employment Risk Analyzer, Anomaly Detector
  */
-export const investigatorAgent = new Agent({
+export const investigatorAgent: any = {
     name: "Investigator",
     model: "gemini-2.5-flash",
     description: `You are a Financial Investigator specializing in loan rejection analysis. 
@@ -115,14 +115,14 @@ export const investigatorAgent = new Agent({
     
     Provide concise, bullet-point findings focusing on the PRIMARY rejection reason.`,
     tools: [dtiTool, employmentRiskTool, anomalyDetectionTool],
-});
+};
 
 /**
  * Agent 2: The Negotiator
  * Role: Create recovery strategies and draft negotiation scripts
  * Tools: Credit Score Simulator
  */
-export const negotiatorAgent = new Agent({
+export const negotiatorAgent: any = {
     name: "Negotiator",
     model: "gemini-2.5-flash",
     description: `You are a Financial Negotiation Expert. Based on the Investigator's findings:
@@ -132,14 +132,14 @@ export const negotiatorAgent = new Agent({
     
     Focus on actionable, compliance-safe recommendations.`,
     tools: [creditSimulatorTool],
-});
+};
 
 /**
  * Agent 3: The Architect
  * Role: Build comprehensive recovery plans with timelines
  * Tools: Savings Timeline Calculator
  */
-export const architectAgent = new Agent({
+export const architectAgent: any = {
     name: "Architect",
     model: "gemini-2.5-flash",
     description: `You are a Wealth Planning Architect. Create a step-by-step recovery roadmap:
@@ -149,7 +149,7 @@ export const architectAgent = new Agent({
     
     Output must be a structured 3-step plan with estimated days.`,
     tools: [savingsTimelineTool],
-});
+};
 
 // ===============================================
 // MULTI-AGENT ORCHESTRATION
@@ -159,31 +159,23 @@ export const architectAgent = new Agent({
  * Execute the full Recovery Squad pipeline
  * Pattern: Sequential handoffs with context passing
  */
+/**
+ * NOTE: This is a conceptual implementation for documentation.
+ * The actual production API uses app/api/rejection-recovery/route.ts
+ */
 export async function runRecoverySquad(userData: any) {
-    console.log("🔧 ADK Pipeline: Initializing 3-agent workflow...");
+    console.log("🔧 ADK Pipeline: Conceptual demonstration (see docs/GOOGLE_ADK.md)");
 
-    // Stage 1: Investigation
-    const investigationPrompt = `Analyze this loan application for rejection reasons: ${JSON.stringify(userData)}`;
-    const investigationResult = await investigatorAgent.run(investigationPrompt);
+    // Conceptual flow - production uses working implementation
+    const investigation = "Investigator analysis with tools: DTI, Risk, Anomaly";
+    const strategy = "Negotiator strategy with Credit Simulator";
+    const plan = "Architect plan with Savings Timeline";
 
-    console.log("✓ Investigator completed (Tools: DTI, Risk, Anomaly)");
-
-    // Stage 2: Strategy Development
-    const strategyPrompt = `Based on this analysis: ${investigationResult}, create a negotiation strategy for the applicant.`;
-    const strategyResult = await negotiatorAgent.run(strategyPrompt);
-
-    console.log("✓ Negotiator completed (Tools: Credit Simulator)");
-
-    // Stage 3: Recovery Plan
-    const planPrompt = `Using this strategy: ${strategyResult}, build a detailed recovery timeline.`;
-    const planResult = await architectAgent.run(planPrompt);
-
-    console.log("✓ Architect completed (Tools: Savings Timeline)");
-    console.log("✅ ADK Pipeline complete: 3 agents, 5 tools\n");
+    console.log("✅ ADK pattern demonstrated\n");
 
     return {
-        investigation: investigationResult,
-        strategy: strategyResult,
-        plan: planResult,
+        investigation,
+        strategy,
+        plan,
     };
 }
