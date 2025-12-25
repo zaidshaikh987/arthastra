@@ -1,42 +1,52 @@
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// import { genkit, z } from "genkit";
-// import { googleAI, gemini15Flash } from "@genkit-ai/googleai";
-
-// Genkit initialization disabled due to Windows Build Path Resolution Issue
-// The code is preserved here for Judge Review.
-/*
-const ai = genkit({
-    plugins: [googleAI()],
-    model: gemini15Flash,
-});
-*/
+// Initialize Gemini directly (Bypassing Genkit path issues on Windows)
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // MOCK SIMULATION MODE (To ensure deployment stability)
-        // The logic below simulates the "Financial Council" debate.
+        // 1. Define Persona Prompts
+        const optimistPrompt = "You are 'The Optimist', a sales-driven loan officer. Your goal is to APPROVE this loan. Find every possible reason to say YES. Focus on: Potential income growth, stability, asset creation. Ignore the risks or downplay them. User Data: " + JSON.stringify(body) + ". Write a short, punchy argument (2-3 sentences) supporting this user. Output purely the argument text.";
 
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate AI thinking time
+        const pessimistPrompt = "You are 'The Pessimist', a strict risk underwriter. Your goal is to REJECT this loan to protect the bank. Focus on: High DTI, credit score gaps, economic downturns. Be skeptical and harsh. User Data: " + JSON.stringify(body) + ". Write a short, punchy argument (2-3 sentences) rejecting this user. Output purely the argument text.";
 
-        const isGoodProfile = (body.monthlyIncome > 40000) && (body.creditScore > 700);
+        // 2. Parallel Execution (Real-time Multi-Agent)
+        const [optRes, pessRes] = await Promise.all([
+            model.generateContent(optimistPrompt),
+            model.generateContent(pessimistPrompt)
+        ]);
+
+        const optimistArg = optRes.response.text();
+        const pessimistArg = pessRes.response.text();
+
+        // 3. The Judge (Sequential Execution)
+        const judgePrompt = "You are 'The Judge', an impartial compliance officer. The Optimist said: " + JSON.stringify(optimistArg) + ". The Pessimist said: " + JSON.stringify(pessimistArg) + ". User Financials: Income: " + body.monthlyIncome + ", Loan: " + body.loanAmount + ", Score: " + (body.creditScore || 'N/A') + ". Make a final binding decision. Return ONLY a JSON object in this format (no markdown): { \"verdict\": \"string explaining decision\", \"approved\": boolean }";
+
+        const judgeRes = await model.generateContent(judgePrompt);
+
+        // Fix: Use simple string replacement without regex literals to avoid build tool parsing issues
+        let judgeText = judgeRes.response.text();
+        judgeText = judgeText.replace("```json", "").replace("```", "").trim();
+
+        // Safety Clean up
+        if (judgeText.startsWith("```")) {
+            judgeText = judgeText.slice(3);
+        }
+        if (judgeText.endsWith("```")) {
+            judgeText = judgeText.slice(0, -3);
+        }
+
+        const judgment = JSON.parse(judgeText);
 
         return NextResponse.json({
-            optimistArgument: isGoodProfile
-                ? "This applicant is a prime candidate! Strong income stability and excellent credit history suggest zero default risk."
-                : "Despite current challenges, the applicant shows massive potential for income growth in the coming sector.",
-
-            pessimistArgument: isGoodProfile
-                ? "Even with good income, the market volatility is a risk. We should check for hidden liabilities."
-                : "High risk alert! The debt-to-income ratio is borderline and credit history is too thin to trust.",
-
-            judgeVerdict: isGoodProfile
-                ? "After weighing the evidence, the applicant's financial health is robust. The risk is minimal."
-                : "The risks outlined by the Pessimist outweigh the potential. We cannot approve this at this time.",
-
-            approved: isGoodProfile
+            optimistArgument: optimistArg,
+            pessimistArgument: pessimistArg,
+            judgeVerdict: judgment.verdict,
+            approved: judgment.approved,
         });
 
     } catch (error: any) {
