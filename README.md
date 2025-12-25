@@ -79,13 +79,75 @@ We leverage the **Web Speech API** to create a hands-free banking experience.
 *   **The Judge Agent:** Listens to both arguments and delivers a final, unbiased verdict in real-time.
 *   **Why Method works:** Prevents "Hallucinations" by forcing the AI to critique its own findings before deciding.
 
-### 5. "The Rejection Recovery Squad" (Autonomous Pipeline) 📉➡️📈
-**Pattern: Chain of Thought & Handoffs**
-If you are rejected, a **Team of 3 Autonomous Agents** activates in the background:
-1.  🕵️ **The Investigator:** Digs through data to find the *exact* root cause (e.g., "Missed Payment in 2022").
-2.  🐺 **The Negotiator:** Takes the Investigator's report and drafts a legal dispute letter or negotiation script.
-3.  🏗️ **The Wealth Architect:** Takes the Negotiator's output and builds a day-by-day "Calendar" to fix the credit score.
-*   **Key Tech:** Agents pass JSON objects to each other to maintain context.
+### 5. "The Rejection Recovery Squad" (Autonomous Tool-Calling Pipeline) 📉➡️📈
+**Pattern: Agentic Tool Use + Chain of Thought**
+
+This is a **true agentic system** where AI agents autonomously call deterministic tools before reasoning.
+
+#### Architecture Diagram
+```
+USER DATA
+    ↓
+┌───────────────────────────────────────────────────────────┐
+│  AGENT 1: THE INVESTIGATOR (Sherlock) 🕵️                 │
+├───────────────────────────────────────────────────────────┤
+│  TOOL CALLS (Autonomous):                                │
+│  • calculateDTI(income, EMI, expenses) → 58.3%           │
+│  • analyzeEmploymentRisk(type, tenure) → "Critical"      │
+│  • detectFinancialAnomalies(userData) → 2 flags          │
+├───────────────────────────────────────────────────────────┤
+│  AI REASONING (Gemini 1.5 Flash):                        │
+│  "Based on DTI=58.3% and employment risk=Critical..."    │
+│  OUTPUT: { rootCause, bulletPoints[], severity }         │
+└─────────────────────┬─────────────────────────────────────┘
+                      ↓ (JSON Handoff)
+┌───────────────────────────────────────────────────────────┐
+│  AGENT 2: THE NEGOTIATOR (The Wolf) 🐺                   │
+├───────────────────────────────────────────────────────────┤
+│  INPUT: Investigator's findings                          │
+│  TOOL CALLS:                                             │
+│  • simulateCreditScoreImpact(650, actions) → 680         │
+├───────────────────────────────────────────────────────────┤
+│  AI REASONING:                                           │
+│  "Score can improve by 30 points if..."                 │
+│  OUTPUT: { strategyName, bulletPoints[], script }        │
+└─────────────────────┬─────────────────────────────────────┘
+                      ↓ (JSON Handoff)
+┌───────────────────────────────────────────────────────────┐
+│  AGENT 3: THE ARCHITECT (The Builder) 🏗️                │
+├───────────────────────────────────────────────────────────┤
+│  INPUT: Negotiator's strategy                           │
+│  TOOL CALLS:                                             │
+│  • calculateSavingsTimeline(target, rate) → 6 months    │
+├───────────────────────────────────────────────────────────┤
+│  AI REASONING:                                           │
+│  "Build emergency fund in 6 months, then..."            │
+│  OUTPUT: { step1, step2, step3, estimatedDays }          │
+└───────────────────────────────────────────────────────────┘
+                      ↓
+                 FRONTEND UI
+```
+
+#### Why This Is True Agentic AI (Not Just a Chatbot)
+
+| Feature | Chatbot | ArthAstra Agents |
+|---------|---------|------------------|
+| **Decision Making** | Pre-scripted responses | Autonomous tool selection |
+| **Data Source** | Text generation only | Real calculators + AI reasoning |
+| **Tool Use** | None | DTI, Credit Simulator, Anomaly Detection |
+| **Output Format** | Generic paragraphs | Structured JSON with bullet points |
+| **Handoffs** | N/A | Agent 1 → Agent 2 → Agent 3 |
+
+#### Tools Available to Agents
+| Tool Name | Purpose | Used By |
+|-----------|---------|---------|
+| `calculateDTI()` | Debt-to-Income ratio | Investigator |
+| `analyzeEmploymentRisk()` | Risk scoring (0-100) | Investigator |
+| `detectFinancialAnomalies()` | Income/savings consistency check | Investigator |
+| `simulateCreditScoreImpact()` | Project score changes | Negotiator |
+| `calculateSavingsTimeline()` | Months to goal | Architect |
+
+See full implementation in `lib/tools/agent-tools.ts`.
 
 ### 📲 Real-Time Updates (Twilio)
 -   **WhatsApp Integration:** Users receive instant notifications for:

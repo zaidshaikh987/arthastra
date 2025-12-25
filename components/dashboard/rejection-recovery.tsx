@@ -122,12 +122,19 @@ export default function RejectionRecovery() {
             {investigation && (
               <div className="space-y-3">
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                  <p className="text-xs font-bold text-blue-800 uppercase">Root Cause Identified</p>
-                  <p className="text-sm font-semibold text-blue-900 mt-1">{investigation.rootCause}</p>
+                  <p className="text-xs font-bold text-blue-800 uppercase">Analysis Complete</p>
+                  <p className="text-sm font-semibold text-blue-900 mt-1">{investigation.severity} Risk</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Hidden Factor</p>
-                  <p className="text-sm text-gray-700">{investigation.hiddenFactor}</p>
+                  <p className="text-xs text-gray-500 mb-2">Key Findings:</p>
+                  <ul className="space-y-1">
+                    {(investigation.bulletPoints || [investigation.rootCause, investigation.hiddenFactor]).map((point: string, i: number) => (
+                      <li key={i} className="text-xs text-gray-700 flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             )}
@@ -144,15 +151,26 @@ export default function RejectionRecovery() {
             {strategy && (
               <div className="space-y-3">
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
-                  <p className="text-xs font-bold text-orange-800 uppercase">Recommended Strategy</p>
+                  <p className="text-xs font-bold text-orange-800 uppercase">Strategy</p>
                   <p className="text-sm font-semibold text-orange-900 mt-1">{strategy.strategyName}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Script Generated</p>
-                  <p className="text-xs font-mono bg-gray-50 p-2 rounded text-gray-600 mt-1 h-32 overflow-y-auto whitespace-pre-wrap">
-                    "{(strategy.negotiationScript || "Script generating...")}"
-                  </p>
+                  <p className="text-xs text-gray-500 mb-2">Action Items:</p>
+                  <ul className="space-y-1">
+                    {(strategy.bulletPoints || [strategy.actionItem]).map((point: string, i: number) => (
+                      <li key={i} className="text-xs text-gray-700 flex items-start gap-2">
+                        <span className="text-orange-600 mt-0.5">→</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+                {strategy.negotiationScript && (
+                  <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-1">Opening Script:</p>
+                    <p className="text-xs text-gray-700 italic">"{strategy.negotiationScript}"</p>
+                  </div>
+                )}
               </div>
             )}
           </AgentCard>
