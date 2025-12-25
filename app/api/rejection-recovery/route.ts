@@ -131,8 +131,10 @@ Format as JSON:
 // MAIN API ROUTE
 // ===============================================
 export async function POST(req: Request) {
+    let body: any = {};
+
     try {
-        const body = await req.json();
+        body = await req.json();
 
         console.log("🔧 Starting Agentic Pipeline with Tool Calls...");
 
@@ -156,11 +158,11 @@ export async function POST(req: Request) {
     } catch (error: any) {
         console.error("Recovery Squad Error:", error);
 
-        // Enhanced fallback with real tool results
+        // Enhanced fallback with real tool results using body from outer scope
         const dti = calculateDTI(
-            (await req.json()).monthlyIncome || 150000,
-            (await req.json()).existingEMI || 30000,
-            (await req.json()).monthlyExpenses || 10000
+            body.monthlyIncome || 150000,
+            body.existingEMI || 30000,
+            body.monthlyExpenses || 10000
         );
 
         return NextResponse.json({
