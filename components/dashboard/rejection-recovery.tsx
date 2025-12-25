@@ -149,8 +149,8 @@ export default function RejectionRecovery() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Script Generated</p>
-                  <p className="text-xs font-mono bg-gray-50 p-2 rounded text-gray-600 mt-1">
-                    "{(strategy.negotiationScript || "").substring(0, 100)}..."
+                  <p className="text-xs font-mono bg-gray-50 p-2 rounded text-gray-600 mt-1 h-32 overflow-y-auto whitespace-pre-wrap">
+                    "{(strategy.negotiationScript || "Script generating...")}"
                   </p>
                 </div>
               </div>
