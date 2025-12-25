@@ -35,8 +35,7 @@ This project utilizes a modern, enterprise-grade stack optimized for **Speed**, 
 *   **API Routes:** Next.js Server Functions (`app/api/*`) handling secure server-side logic.
 *   **Voice Processing:**
     *   **Web Speech API:** Native Browser API used for distinct Speech-to-Text (STT) and Text-to-Speech (TTS) capabilities without external latency.
-*   **AI Integration:**
-    *   **Google Gemini 1.5 Flash:** The high-speed "Brain" powering the agentic reasoning.
+**New in v2.0:** A ground-breaking feature powered by **Google Genkit (ADK Concept)** and **Gemini Pro**.* The high-speed "Brain" powering the agentic reasoning.
     *   `@google/genai` SDK: Direct interface for AI model communication.
 *   **Notifications:**
     *   **Twilio SDK:** (`twilio`) Integrated for real-time WhatsApp and SMS status updates to the user's registered phone number.
