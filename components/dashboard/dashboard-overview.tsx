@@ -253,14 +253,23 @@ function calculateEligibility(data: any, filesCount: number = 0) {
   const dti = (existingEMI / monthlyIncome) * 100
   const dtiThreshold = data.isJointApplication ? 55 : data.hasCreditHistory ? 50 : 40
 
-  // Eligibility
+  // Eligibility - Using EMI-based loan calculation
+  // EMI capacity = 40% of available income (conservative banking standard)
   const availableIncome = monthlyIncome - existingEMI
-  let maxEligible = availableIncome * 60 * tenure
+  const maxEMICapacity = availableIncome * 0.4
+  const months = tenure * 12
+  const monthlyRate = 0.12 / 12 // Assume 12% p.a.
+
+  // Loan Principal = EMI * ((1+r)^n - 1) / (r * (1+r)^n)
+  const factor = Math.pow(1 + monthlyRate, months)
+  let maxEligible = maxEMICapacity * ((factor - 1) / (monthlyRate * factor))
 
   if (!data.hasCreditHistory) maxEligible *= 0.7
   if (data.creditScore && data.creditScore >= 750) maxEligible *= 1.15
   if (data.isJointApplication && data.coborrowerIncome) {
-    maxEligible += data.coborrowerIncome * 40 * tenure
+    // Co-borrower adds 30% of their EMI capacity
+    const coborrowerEMI = data.coborrowerIncome * 0.3
+    maxEligible += coborrowerEMI * ((factor - 1) / (monthlyRate * factor))
   }
 
   const isEligible = dti <= dtiThreshold && monthlyIncome >= 25000
