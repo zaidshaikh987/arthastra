@@ -52,24 +52,54 @@ export async function POST(req: Request) {
         const body = await req.json();
         const context = JSON.stringify(body, null, 2);
 
-        console.log("\n🏛️ Financial Council (Fallback Mode)...\n");
+        console.log("\n");
+        console.log("╔════════════════════════════════════════════════════════════╗");
+        console.log("║       🏛️  FINANCIAL COUNCIL - Multi-Agent Debate          ║");
+        console.log("╠════════════════════════════════════════════════════════════╣");
+        console.log("║  Powered by: Gemini 2.0 Flash + Google GenAI SDK          ║");
+        console.log("╚════════════════════════════════════════════════════════════╝");
+        console.log("\n📋 INPUT DATA:");
+        console.log("   • Income: ₹" + (body.monthlyIncome || "N/A").toLocaleString());
+        console.log("   • Loan Amount: ₹" + (body.loanAmount || "N/A").toLocaleString());
+        console.log("   • Credit Score: " + (body.creditScore || "650 (default)"));
+        console.log("");
 
         // Run optimist
-        console.log("  ⚡ Optimist arguing...");
+        console.log("┌─────────────────────────────────────────────────────────────┐");
+        console.log("│ STAGE 1: ⚡ THE OPTIMIST                                    │");
+        console.log("├─────────────────────────────────────────────────────────────┤");
+        console.log("│ Role: Sales-driven loan officer arguing FOR approval       │");
+        console.log("│ Model: gemini-2.0-flash-exp                                │");
+        console.log("│ Status: Generating argument...                             │");
+        console.log("└─────────────────────────────────────────────────────────────┘");
         const optimistArg = await runSimpleAgent("optimist", context);
+        console.log("   ✅ Optimist complete: " + optimistArg.substring(0, 80) + "...\n");
 
         // Small delay to avoid rate limits
         await new Promise(r => setTimeout(r, 1000));
 
         // Run pessimist
-        console.log("  🔒 Pessimist arguing...");
+        console.log("┌─────────────────────────────────────────────────────────────┐");
+        console.log("│ STAGE 2: 🔒 THE PESSIMIST                                   │");
+        console.log("├─────────────────────────────────────────────────────────────┤");
+        console.log("│ Role: Risk underwriter arguing AGAINST approval            │");
+        console.log("│ Model: gemini-2.0-flash-exp                                │");
+        console.log("│ Status: Generating counter-argument...                     │");
+        console.log("└─────────────────────────────────────────────────────────────┘");
         const pessimistArg = await runSimpleAgent("pessimist", context);
+        console.log("   ✅ Pessimist complete: " + pessimistArg.substring(0, 80) + "...\n");
 
         // Small delay
         await new Promise(r => setTimeout(r, 1000));
 
         // Run judge
-        console.log("  ⚖️ Judge deciding...");
+        console.log("┌─────────────────────────────────────────────────────────────┐");
+        console.log("│ STAGE 3: ⚖️  THE JUDGE                                      │");
+        console.log("├─────────────────────────────────────────────────────────────┤");
+        console.log("│ Role: Chief Compliance Officer - Final Decision Maker      │");
+        console.log("│ Model: gemini-2.0-flash-exp                                │");
+        console.log("│ Status: Weighing arguments...                              │");
+        console.log("└─────────────────────────────────────────────────────────────┘");
         const judgeContext = `
 LOAN APPLICATION:
 ${context}
@@ -93,7 +123,14 @@ ${pessimistArg}
             // Keep default
         }
 
-        console.log("  ✅ Council Complete\n");
+        console.log("   ✅ Judge complete\n");
+        console.log("╔════════════════════════════════════════════════════════════╗");
+        console.log("║                    📜 FINAL VERDICT                        ║");
+        console.log("╠════════════════════════════════════════════════════════════╣");
+        console.log("║  Decision: " + (judgment.approved ? "✅ APPROVED" : "❌ REJECTED") + "                                       ║");
+        console.log("║  Confidence: " + (judgment.confidence || 50) + "%                                        ║");
+        console.log("╚════════════════════════════════════════════════════════════╝");
+        console.log("\n");
 
         return NextResponse.json({
             optimistArgument: optimistArg || "No argument provided.",

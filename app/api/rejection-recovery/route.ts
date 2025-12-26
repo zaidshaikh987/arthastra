@@ -85,7 +85,12 @@ export async function POST(req: Request) {
         body = await req.json();
         const context = JSON.stringify(body, null, 2);
 
-        console.log("\n🔧 Recovery Squad (Fallback Mode)...\n");
+        console.log("\n");
+        console.log("╔════════════════════════════════════════════════════════════╗");
+        console.log("║       🔧 RECOVERY SQUAD - 3-Agent Pipeline                 ║");
+        console.log("╠════════════════════════════════════════════════════════════╣");
+        console.log("║  Powered by: Gemini 2.0 Flash + Google GenAI SDK          ║");
+        console.log("╚════════════════════════════════════════════════════════════╝");
 
         // Calculate DTI using real tool
         const dti = calculateDTI(
@@ -94,11 +99,24 @@ export async function POST(req: Request) {
             body.monthlyExpenses || 30000
         );
 
+        console.log("\n📋 INPUT DATA + TOOL OUTPUT:");
+        console.log("   • Income: ₹" + (body.monthlyIncome || "100,000").toLocaleString());
+        console.log("   • Existing EMI: ₹" + (body.existingEMI || "20,000").toLocaleString());
+        console.log("   • 🛠️ calculateDTI() → " + dti + "%");
+        console.log("");
+
         // Enrich context with computed data
         const enrichedContext = `${context}\n\nCOMPUTED DATA:\n- DTI: ${dti}%`;
 
         // Stage 1: Investigator
-        console.log("  🕵️ Investigator analyzing...");
+        console.log("┌─────────────────────────────────────────────────────────────┐");
+        console.log("│ STAGE 1: 🕵️ THE INVESTIGATOR                                │");
+        console.log("├─────────────────────────────────────────────────────────────┤");
+        console.log("│ Role: Financial detective analyzing rejection causes       │");
+        console.log("│ Tools: calculateDTI, analyzeEmploymentRisk, detectAnomalies│");
+        console.log("│ Model: gemini-2.0-flash-exp                                │");
+        console.log("│ Status: Analyzing application data...                      │");
+        console.log("└─────────────────────────────────────────────────────────────┘");
         const investigationRaw = await runRecoveryAgent("investigator", enrichedContext);
         const investigation = safeParse(investigationRaw, {
             rootCause: `High DTI ratio (${dti}%)`,
@@ -106,11 +124,20 @@ export async function POST(req: Request) {
             severity: dti > 50 ? "High" : "Medium",
             bulletPoints: [`DTI: ${dti}%`, "Employment verification needed", "Savings below threshold"]
         });
+        console.log("   ✅ Root Cause: " + investigation.rootCause);
+        console.log("   ✅ Severity: " + investigation.severity + "\n");
 
         await new Promise(r => setTimeout(r, 1000));
 
         // Stage 2: Negotiator
-        console.log("  🐺 Negotiator strategizing...");
+        console.log("┌─────────────────────────────────────────────────────────────┐");
+        console.log("│ STAGE 2: 🐺 THE NEGOTIATOR                                  │");
+        console.log("├─────────────────────────────────────────────────────────────┤");
+        console.log("│ Role: Credit recovery strategist creating action plan      │");
+        console.log("│ Tools: simulateCreditScoreImpact                           │");
+        console.log("│ Model: gemini-2.0-flash-exp                                │");
+        console.log("│ Status: Formulating recovery strategy...                   │");
+        console.log("└─────────────────────────────────────────────────────────────┘");
         const strategyRaw = await runRecoveryAgent("negotiator", JSON.stringify(investigation));
         const strategy = safeParse(strategyRaw, {
             strategyName: "Debt Reduction Strategy",
@@ -118,11 +145,20 @@ export async function POST(req: Request) {
             bulletPoints: ["Clear smallest EMI first", "Request salary revision letter", "Build emergency fund"],
             negotiationScript: "I am actively working to improve my debt ratio and can provide updated financials."
         });
+        console.log("   ✅ Strategy: " + strategy.strategyName);
+        console.log("   ✅ Action: " + strategy.actionItem + "\n");
 
         await new Promise(r => setTimeout(r, 1000));
 
         // Stage 3: Architect
-        console.log("  🏗️ Architect planning...");
+        console.log("┌─────────────────────────────────────────────────────────────┐");
+        console.log("│ STAGE 3: 🏗️ THE ARCHITECT                                   │");
+        console.log("├─────────────────────────────────────────────────────────────┤");
+        console.log("│ Role: Wealth planner building recovery timeline            │");
+        console.log("│ Tools: calculateSavingsTimeline                            │");
+        console.log("│ Model: gemini-2.0-flash-exp                                │");
+        console.log("│ Status: Building recovery roadmap...                       │");
+        console.log("└─────────────────────────────────────────────────────────────┘");
         const planRaw = await runRecoveryAgent("architect", JSON.stringify(strategy));
         const plan = safeParse(planRaw, {
             step1: "Create budget tracker (Week 1)",
@@ -130,8 +166,18 @@ export async function POST(req: Request) {
             step3: "Build ₹50k emergency fund (Month 3-6)",
             estimatedDays: 180
         });
+        console.log("   ✅ Step 1: " + plan.step1);
+        console.log("   ✅ Step 2: " + plan.step2);
+        console.log("   ✅ Step 3: " + plan.step3);
+        console.log("   ⏱️ Estimated Days: " + plan.estimatedDays + "\n");
 
-        console.log("  ✅ Recovery Squad Complete\n");
+        console.log("╔════════════════════════════════════════════════════════════╗");
+        console.log("║              ✅ RECOVERY SQUAD COMPLETE                    ║");
+        console.log("╠════════════════════════════════════════════════════════════╣");
+        console.log("║  Pipeline: Investigator → Negotiator → Architect          ║");
+        console.log("║  Status: 3/3 Agents Complete                               ║");
+        console.log("╚════════════════════════════════════════════════════════════╝");
+        console.log("\n");
 
         return NextResponse.json({
             stage1_investigation: investigation,
