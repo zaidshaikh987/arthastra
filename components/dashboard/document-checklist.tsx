@@ -209,7 +209,8 @@ export default function DocumentChecklist() {
             imageData: base64Data,
             documentType: docId === "pan" ? "pan" :
               docId === "aadhaar" ? "aadhaar" :
-                docId === "salary-slip" ? "salary_slip" : "bank_statement"
+                docId === "salary-slip" ? "salary_slip" :
+                  docId === "passport" ? "passport" : "bank_statement"
           })
         })
 

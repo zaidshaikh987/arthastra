@@ -25,7 +25,7 @@ export interface VerificationResult {
  */
 export async function verifyDocument(
     imageData: string,
-    documentType: "pan" | "aadhaar" | "salary_slip" | "bank_statement"
+    documentType: "pan" | "aadhaar" | "salary_slip" | "bank_statement" | "passport"
 ): Promise<VerificationResult> {
     try {
         console.log(`👁️ Analyzing ${documentType} with Gemini Vision...`);
@@ -65,6 +65,15 @@ Format: {"isValid": boolean, "confidence": 0-100, "issues": [], "name": "employe
 
 IMPORTANT: Return ONLY JSON. No markdown.
 Format: {"isValid": boolean, "confidence": 0-100, "issues": [], "name": "account holder", "bank": "bank name"}`,
+
+            passport: `Analyze this passport image forensically:
+1. Is it a valid passport document?
+2. Is the image clear and readable?
+3. Are there signs of editing or tampering?
+4. Extract: FullName, PassportNumber, DateOfBirth, Nationality, ExpiryDate
+
+IMPORTANT: Return ONLY JSON. No markdown.
+Format: {"isValid": boolean, "confidence": 0-100, "issues": [], "name": "full name", "number": "passport number", "dob": "dd/mm/yyyy", "nationality": "country", "expiry": "dd/mm/yyyy"}`,
         };
 
         // Use gemini-2.5-flash for best quality
